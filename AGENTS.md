@@ -167,6 +167,35 @@ port 8080 is busy …  ❌ the runner stopped before any game frame; the panel k
 That is the signature this repo documents: a green canary + a panel holding an old frame = the failure is on
 this side of the wire, not the panel's.
 
+Firewall: `grep ENABLE /etc/ufw/ufw.conf` → **`ENABLED=yes`**, so incoming is denied by default and 8000/8043
+must be allowed or a phone gets nothing while this box answers *itself* perfectly:
+
+```
+sudo ufw allow from 192.168.0.0/16 to any port 8000 proto tcp comment 'ivdoom page http  -> LAN devices'
+sudo ufw allow from 192.168.0.0/16 to any port 8043 proto tcp comment 'ivdoom page https -> LAN devices'
+sudo ufw status numbered     # the only way to see them; both /etc/ufw/user.rules and nft need root
+```
+
+Two things this repo will not paper over:
+
+1. **Editing `/etc/ufw/user.rules` in an editor does nothing by itself** — ufw reads that file when it is
+   (re)loaded, so `sudo ufw reload` is required after a hand edit (done 2026-10-12 20:4x). Prefer `ufw allow`
+   so the file is written in the syntax ufw itself expects.
+2. **The 20:51 "reloaded, still unreachable" was measured to be a missing server, not a missing rule.** `ss`
+   shows nothing listening on 8000 between 20:39 (a 14 s test host) and **20:52:51**, when the user's own
+   `yarn play` (`pid 286280`) bound `0.0.0.0:8000`:
+   ```
+   ss -ltnp → LISTEN 0.0.0.0:8000 users:(("MainThread",pid=286280))
+   ps -p 286280 → node scripts/doom-device.cjs --input remote --warm --hold …   (stage/width not quoted: see
+                    «Run it» — they live in package.json and the user edits them while testing)
+   curl http://192.168.1.16:8000/api/doom/version → 200 {"pid":286280,…}
+   ```
+   A self-request is **not** evidence about ufw: a packet this box sends to its own address never crosses the
+   boundary the rule is about. Only a phone (or another machine) can prove a rule works — and this agent cannot
+   even read the ruleset here (`nft list ruleset` → `Operation not permitted`, `sudo -n` → needs a password).
+3. No `.gener/devcert` ⇒ the host is **plain HTTP**. Typing `https://192.168.1.16:8000/…` fails for that
+   reason alone, before any firewall is involved: run `yarn cert` for the 8043 path.
+
 ## NOT proven / open (do not silently "fix")
 
 1. **Android install.** The install menu disappeared at 17:11 because the phone got the *forwarder's* 502 text,

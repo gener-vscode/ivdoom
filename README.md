@@ -108,6 +108,16 @@ ask for live in `package.json` and are edited there). Details and the open quest
   port is answered with both possible causes named (our previous run, or a program that is not ivdoom). In the
   second case `--port <n>` moves this run — measured: `node scripts/doom-device.cjs --host-only --port 8091`
   served `/api/doom/ui/` 200 while another program held 8080.
+- **A machine whose firewall is on needs a rule for whichever port you use** (`grep ENABLE /etc/ufw/ufw.conf`
+  says `ENABLED=yes` on this one):
+  ```bash
+  sudo ufw allow from 192.168.0.0/16 to any port 8000 proto tcp comment 'ivdoom page http  -> LAN devices'
+  sudo ufw allow from 192.168.0.0/16 to any port 8043 proto tcp comment 'ivdoom page https -> LAN devices'
+  ```
+  Hand-editing `/etc/ufw/user.rules` needs `sudo ufw reload` to take effect; `sudo ufw status numbered` is how
+  you check it. A phone still failing after that is *not* proof the rule is wrong — check `ss -ltnp` first: on
+  2026-10-12 the phone was refused at a moment when nothing was listening (the run had died on the old port).
+  And without a dev cert the page is plain HTTP: type `http://`, not `https://`.
 
 ## Development
 

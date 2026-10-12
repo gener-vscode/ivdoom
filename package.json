@@ -18,7 +18,7 @@
         "serve": "yarn build && node scripts/doom-device.cjs --host-only",
         "host:check": "yarn build && node scripts/host-check.cjs",
         "canary": "node scripts/canary.cjs",
-        "play": "yarn build && node scripts/doom-device.cjs --input remote --warm --hold --seconds 0 --warp 1 3 --push 64",
+        "play": "yarn build && node scripts/doom-device.cjs --input remote --warm --hold --seconds 0 --warp 2 1 --push 64",
         "play:32": "yarn build && node scripts/doom-device.cjs --input remote --warm --hold --seconds 0 --warp 1 2 --push 32",
         "play:demo": "yarn build && node scripts/doom-device.cjs --warm --hold --seconds 30 --push 32,64",
         "print-argv": "node scripts/doom-device.cjs --input remote --print-argv",
