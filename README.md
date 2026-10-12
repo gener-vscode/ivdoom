@@ -7,8 +7,8 @@ headless engine all run in the same PID — no Azure Functions host, no TLS forw
 subprocess that stays is the game itself: a C binary (`doomgeneric` + a `dg_stdio.c` shim) fed key lines on
 stdin and read back as raw frames on fd 3.
 
-![60 s of the engine's own recorded demo, 64×64 at 24 fps](assets/doom-demo-60s-24fps-1.gif)
-
+<img src="assets/doom-demo-60s-24fps-1.gif" width="512" alt="60 s of the engine's own recorded demo, 64×64 at 24 fps" />
+ 
 > **What that file is, exactly** — because "it's a demo GIF" hides everything worth knowing about it:
 > `assets/doom-demo-60s-24fps-1.gif`, 64×64, **60.00 s**, GIF delays of 40 ms and 50 ms written per frame
 > (1440 frames; 1433 after the GIF writer merged consecutive identical frames and summed their delays, which
@@ -17,6 +17,13 @@ stdin and read back as raw frames on fd 3.
 > **It plays at 0.69× game speed**: 1440 consecutive frames are 41.1 s of demo time at DOOM's fixed 35 tics/s,
 > shown over 60.00 s. Real time at 24 fps would mean dropping engine frames, and this repo does not do that:
 > the sequence it captures is the sequence the engine produced. 5 308 239 bytes.
+>
+> **Shown at `width="512"`, from a 64 px file.** That attribute is the only enlargement GitHub's renderer
+> keeps: measured against its own output, `width` survives while `style` (including `image-rendering`, `zoom`,
+> `transform`), `class` and `srcset` are all stripped and replaced by GitHub's own `max-width:100%` ceiling.
+> So the 8× here is the browser's interpolation, not this repo's choice — see *Measured in this repo* in
+> `AGENTS.md` for the ladder, and for the byte cost of baking the pixels instead (128 px = 11 117 631 B up to
+> 512 px = 57 478 525 B, which is why the file stays 64×64).
 
 ## Run it
 

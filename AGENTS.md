@@ -95,6 +95,37 @@ produces the recorded `[40,40,40,40,40,50]`, which is why the old code passed it
 Note the honest limit, printed in the README too: 1440 consecutive frames are 41.1 s of demo time at DOOM's
 35 tics/s shown over 60.00 s = **0.69× game speed**; real-time 24 fps would mean dropping engine frames.
 
+Which image-sizing markup survives GitHub's README renderer — measured by asking GitHub for its own output
+(`Accept: application/vnd.github.html` → `GET /repos/gener-vscode/ivdoom/readme`). The candidates were put on
+a throwaway branch (`git commit-tree` on top of `f773c3c` = `dc273483`, pushed as `probe/readme-me`, read back
+with `?ref=`, then deleted — `git ls-remote --heads origin` now lists only `main`):
+```
+style="image-rendering: pixelated; zoom: 16"     STRIPPED  ← GitHub replaces style with max-width:100%
+style="image-rendering: pixelated; transform:2x" STRIPPED
+class="pixelated"                                STRIPPED
+srcset="… 2x"                                    STRIPPED
+width="256" height="256"                         KEPT, GitHub adds max-width:100%; height:auto; max-height:256px
+width="256"  (no height)                         KEPT, aspect preserved, max-width:100%
+align="left"                                     KEPT
+<details><summary>…</summary><img …></details>   KEPT (image inside renders too)
+![alt](file.gif "title")                         title KEPT; GitHub injects data-animated-image="" + max-width
+```
+So on GitHub **only attributes survive**; every CSS route (style, class, srcset) is gone before anything paints.
+A `style=` in the README is a local-preview-only trick — which is exactly why `zoom:16` looked perfect on this
+machine and cannot be expected on github.com. Note also that `max-width:100%` is GitHub's own injection, not
+author-authored CSS surviving: it is a ceiling, never a scale-up.
+
+Nearest-neighbour upscale of the shipped GIF (PIL `Image.NEAREST` on `assets/doom-demo-60s-24fps-1.gif`, the
+per-frame durations copied as-is, then read back: every file is still 1433 frames / 60 000 ms — the frames
+themselves, source included, were read back from the file, not inferred):
+```
+128×128  11 117 631 B (2.09×)   192×192  18 001 122 B (3.39×)   256×256  25 329 881 B (4.77×)
+384×384  40 947 161 B (7.71×)   512×512  57 478 525 B (10.83×)  ← source 64×64 = 5 308 239 B
+```
+"Bake the pixels bigger" is therefore not free: crisp-by-construction at 8× costs 10.8× the file. A palette
+GIF compresses repeated blocks well, but 48× the pixel count dominates the ledger. Probe files are under
+`.gener/probe/` + `.gener/probe-up/` (gitignored), so measuring this changed nothing tracked.
+
 ## NOT proven / open (do not silently "fix")
 
 1. **Android install.** The install menu disappeared at 17:11 because the phone got the *forwarder's* 502 text,
@@ -112,6 +143,11 @@ Note the honest limit, printed in the README too: 1440 consecutive frames are 41
 4. `PixooAPI#push()` still discards the device response, so a panel that refuses a frame leaves no evidence.
 5. The panel's own `GetIndex` connection count is not printed by the runner yet — a firmware restart mid-run
    currently has to be noticed by eye.
+6. **How a scaled-up GIF *looks*.** Which attributes GitHub keeps is measured (above). What a browser actually
+   paints when a 64 px source is asked for at `width="512"` — smooth, because the only remaining lever is the
+   browser's own interpolation, and `README.md` now asks for exactly that (the user's choice of A/`512`, the
+   file itself stays 64×64 at 5 308 239 B) — is a browser behaviour this repo has not measured (no headless
+   renderer here). If it matters, settle it by looking at the pushed page, not by arguing about specs.
 
 ## Rules this repo inherited (from the work that made it)
 
