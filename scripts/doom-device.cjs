@@ -65,13 +65,9 @@ const argValue = (argv, name, fallback) => {
 const has = (argv, name) => argv.includes(`--${name}`);
 const loadDist = async (rel) => import(url.pathToFileURL(path.join(REPO, 'dist', rel)).href);
 
-const localSettings = () => {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(REPO, 'local.settings.json'), 'utf8')).Values ?? {};
-  } catch {
-    return {};
-  }
-};
+/* One reader for the panel address (scripts/device-config.cjs). `local.settings.json` is gone on purpose: it
+   is the Azure Functions host's file and this repo has no Functions host. */
+const { deviceValues, noOriginMessage } = require('./device-config.cjs');
 
 const decodeFrame = (buf) => {
   const px = new Array(SRC_W * SRC_H);
@@ -379,9 +375,9 @@ const main = async () => {
         return { table, paceMs, picSpeed };
     };
   const { cropAndDownscale, doomCrop, DOOM_VIEW_HEIGHT } = await loadDist('game/scale.js');
-  const settings = localSettings();
+  const settings = deviceValues();
   const origin = argValue(argv, 'origin', process.env.PIXOO_ORIGIN || settings.PIXOO_ORIGIN);
-  if (!origin) throw new Error('PIXOO_ORIGIN not found (local.settings.json)');
+  if (!origin) throw new Error(noOriginMessage('--origin'));
 
   /* DOOM_MAX_FRAMES/MS are the ENGINE's own caps. A bounded run must not be cut short by them - and a
    play-mode run must not be stopped by them at all - so they are set just past what this loop enforces.

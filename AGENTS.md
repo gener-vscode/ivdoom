@@ -29,8 +29,19 @@ yarn ui:install-check -- --urls https://<this-box>:8043/api/doom/ui/   # 8043 = 
 yarn kill            # free 8043 (TLS) and 8000 (plain) — the two DEFAULT_*_PORT values
 ```
 `.gener/` is gitignored: vendor (8 MB), `freedoom1.wad` (28 MB of 51 MB of downloads), the build and the dev
-cert are all reproducible with the two commands above. `local.settings.json` holds `PIXOO_ORIGIN` (the panel's
-LAN address) and nothing else.
+cert are all reproducible with the two commands above — and so is `.gener/device.json`, which holds
+`PIXOO_ORIGIN` (the panel's LAN address).
+
+`local.settings.json` is **not in this repo and must not come back**: it is the Azure Functions host's config
+file and there is no Functions host here (`src/host/server.ts` owns the port). A panel address is a property of
+the machine it sits on, so it belongs in a gitignored file rather than a tracked one. One reader only —
+`scripts/device-config.cjs` (`deviceValues()`, `noOriginMessage()`) — used by `scripts/doom-device.cjs`,
+`scripts/pixoo-protocol.cjs` and through it `scripts/canary.cjs`; the `--origin` flag and the `PIXOO_ORIGIN`
+environment still win over the file. `yarn device` prints what a run would resolve, without touching the panel:
+```
+device config  .gener/device.json  present
+PIXOO_ORIGIN  http://192.168.1.81
+```
 
 `yarn play`'s stage and width are edited **in `package.json` and only there** — the user changes them while
 testing, so this file deliberately does not copy them (a second copy of a value is the thing that goes stale).

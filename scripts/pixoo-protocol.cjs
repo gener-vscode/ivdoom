@@ -56,13 +56,10 @@ const clampSpeed = (value, fallback = PRODUCTION_SPEED, { min = SPEED_MIN, max =
     return Math.min(max, Math.max(min, Math.round(n)));
 };
 
-const settingsValues = () => {
-  try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'local.settings.json'), 'utf8')).Values || {};
-  } catch {
-    return {};
-  }
-};
+/* Kept under the same name because scripts/canary.cjs imports it; the READING now lives in one place
+   (scripts/device-config.cjs → .gener/device.json) so there is no second parser here. */
+const { deviceValues, noOriginMessage } = require('./device-config.cjs');
+const settingsValues = deviceValues;
 
 /** Solid-colour frame as raw RGB bytes (row-major: y*width+x), exactly like PixooAPI.buffer.flat(). */
 const solidFrame = (size, [r, g, b]) => {

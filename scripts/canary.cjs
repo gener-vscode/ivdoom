@@ -22,6 +22,7 @@
  */
 
 const { createPoster, livenessProbe, settingsValues } = require('./pixoo-protocol.cjs');
+const { noOriginMessage } = require('./device-config.cjs');
 
 const argNumber = (name, fallback, { min, max }) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -39,7 +40,7 @@ const argText = (name, fallback) => {
 
 const origin = argText('origin') || process.env.PIXOO_ORIGIN || settingsValues().PIXOO_ORIGIN || '';
 if (!origin) {
-  console.error('❌ no PIXOO_ORIGIN (env, --origin, or local.settings.json)');
+  console.error(`❌ ${noOriginMessage('--origin')}`);
   process.exit(1);
 }
 const label = argText('label', 'canary');

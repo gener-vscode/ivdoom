@@ -95,9 +95,11 @@ ask for live in `package.json` and are edited there). Details and the open quest
 
 ## Notes
 
-- `local.settings.json` holds `PIXOO_ORIGIN` — your panel's LAN address — and nothing else. `.gener/` is
-  gitignored: the engine source, the 28 MB WAD, the build and the dev cert are all reproducible from the two
-  commands above.
+- **Your panel's address goes in `.gener/device.json`**, which is gitignored (`.gener/` also holds the engine
+  source, the 28 MB WAD, the build and the dev cert — all reproducible from the two commands above):
+  `{"Values":{"PIXOO_ORIGIN":"http://<panel-ip>"}}`. `--origin` and the `PIXOO_ORIGIN` environment override it,
+  and `yarn device` shows what a run would resolve. There is deliberately **no `local.settings.json`** here:
+  that file belongs to an Azure Functions host, and this repo runs its own.
 - There is **no shared layer** with the dashboard this was split out of (`../pixoo`): no `file:../pixoo`, no
   third package. `src/input`, `src/pixoo`, `src/hud`, `src/ui` and `resources/ui` are copies here, so they can
   drift — the pacing numbers in `src/pixoo/pacing.ts` are this repo's to change.
