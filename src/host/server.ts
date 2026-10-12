@@ -7,7 +7,7 @@
  * `scripts/https-proxy.cjs` on 7443) had a failure mode this one structurally cannot have: a forwarder with
  * no upstream answers 502 while the page and the manifest are perfectly fine, and an orphaned forwarder
  * holding the port answers `EADDRINUSE` to the next run. Here there is no second process to be missing, and
- * no orphan to collide with - one PID, own port 8443, `Ctrl-C` ends it.
+  * no orphan to collide with - one PID, own port (see DEFAULT_*_PORT below), `Ctrl-C` ends it.
  *
  * Plain `node:http` when there is no dev cert, `node:https` when there is one. The routes are
  * `src/http/handlers.ts`; nothing in this file decides a contract.
@@ -28,8 +28,12 @@ export const CERT_DIR = path.join(REPO, '.gener', 'devcert');
 /** A strip POST is a few hundred KB of base64 (src/hud/wire.ts caps the decoded image); 4 MB is slack. */
 export const MAX_BODY_BYTES = 4_000_000;
 /** 7071/7443 belong to the Azure host and its forwarder; a game server must not ask to share them. */
-export const DEFAULT_TLS_PORT = 8443;
-export const DEFAULT_HTTP_PORT = 8080;
+/* 8043 / 8000, not 8443 / 8080: on the machine this is developed on, 8080 is owned by another runtime
+   (measured 2026-10-12: `yarn play` printed "port 8080 is busy" while `ss -ltnp` showed a python process
+   holding it). These two are free here and are still above 1024, so no privileges are needed. `--port <n>`
+   overrides either of them; see also `yarn kill`, which frees exactly these two. */
+export const DEFAULT_TLS_PORT = 8043;
+export const DEFAULT_HTTP_PORT = 8000;
 
 export type HostOptions = { port?: number; prefix?: string; certDir?: string };
 
@@ -45,7 +49,7 @@ export type RunningHost = {
   port: number;
   prefix: string;
   tls: boolean;
-  /** e.g. https://127.0.0.1:8443/api/doom - no trailing slash */
+    /** e.g. https://127.0.0.1:8043/api/doom - no trailing slash */
   base: string;
   pageUrl: string;
   /** one URL per real LAN interface: the address the phone should type, same list the cert was built from */
@@ -172,9 +176,14 @@ export const startHost = async (options: HostOptions = {}): Promise<RunningHost>
     /* The one error a host can have on start, said plainly: a previous run is still holding the port. */
     server.once('error', (error: NodeJS.ErrnoException) =>
       reject(
-        error.code === 'EADDRINUSE'
-          ? new Error(`port ${port} is busy - another ivdoom host is still running (yarn kill, then start once)`)
-          : error,
+          error.code === 'EADDRINUSE'
+              ? new Error(
+                  /* A busy port has two possible causes and this process cannot tell them apart, so it says both:
+                     our own previous run, or something else that owns the port. Only the first is `yarn kill`. */
+                  `port ${port} is busy: another ivdoom host (yarn kill), or a program that is not ivdoom - ` +
+                  `if it is not ours, start this run on another port with --port <n>`,
+              )
+              : error,
       ),
     );
     server.listen(port, '0.0.0.0', () => resolve());

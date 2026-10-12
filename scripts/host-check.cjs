@@ -17,7 +17,8 @@
  * that pid equals `process.pid` of the process making the requests.
  *
  * NOTHING here touches the panel or the engine. `engineBuilt` is REPORTED, never assumed. Default port is
- * 8455, never 8443: `yarn play` owns 8443 and a check must not collide with a game.
+  * 8455, never the DEFAULT_*_PORT pair of `src/host/server.ts`: `yarn play` owns those and a check must not
+     * collide with a game. 8455 is this file's own port and is not used by the runner.
  */
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // before `dist` is imported: the dev cert is self-signed
 

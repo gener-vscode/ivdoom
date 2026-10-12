@@ -19,29 +19,30 @@ and copies drift. That trade-off was chosen deliberately: no `file:../pixoo`, no
 ```bash
 yarn engine          # clone doomgeneric + make → .gener/build/doom/doom-headless (needs gcc)
 yarn cert            # .gener/devcert/dev.crt + dev.key, SAN from os.networkInterfaces()
-yarn play            # host + playable DOOM, one command: --input remote --warp 1 2 --push 64
+yarn play            # host + playable DOOM, one command; its --warp/--push are in package.json — read them there
 yarn play:32         # the width actually measured playable (see «Measured»)
 yarn play:demo       # no phone: -playdemo DEMO1, the path every pixoo frame note was measured through
 yarn serve           # the page + broker + hud cache only: no engine, no panel
 yarn host:check      # prove one process serves every route (no panel, no engine)
 yarn canary          # Channel/GetIndex liveness before/after a device run
-yarn ui:install-check -- --urls https://<this-box>:8443/api/doom/ui/
-yarn kill            # free 8443/8080
+yarn ui:install-check -- --urls https://<this-box>:8043/api/doom/ui/   # 8043 = DEFAULT_TLS_PORT
+yarn kill            # free 8043 (TLS) and 8000 (plain) — the two DEFAULT_*_PORT values
 ```
 `.gener/` is gitignored: vendor (8 MB), `freedoom1.wad` (28 MB of 51 MB of downloads), the build and the dev
 cert are all reproducible with the two commands above. `local.settings.json` holds `PIXOO_ORIGIN` (the panel's
 LAN address) and nothing else.
 
-`yarn play` keeps the stage and width **the user chose** (`--warp 1 2 --push 64`, E1M2 at PicWidth 64). Changing
-the default means editing this file's `package.json`, because every option here is read with `indexOf()` —
-**the FIRST match wins**.
+`yarn play`'s stage and width are edited **in `package.json` and only there** — the user changes them while
+testing, so this file deliberately does not copy them (a second copy of a value is the thing that goes stale).
+Every option here is read with `indexOf()`: **the FIRST match wins**, which is why a `--` suffix in a yarn
+script does not override an earlier one.
 
 ## Shape of it
 
 | file | role |
 |---|---|
 | `scripts/doom-device.cjs` | the entry: read args → start the host → build the engine argv → spawn → pull frames from fd 3 → scale → push → `Ctrl-C` releases keys, closes engine **then** host |
-| `src/host/server.ts` | `node:https` when `.gener/devcert` exists, else `node:http`. Own port (8443 TLS / 8080 plain), 4 MB body cap, `EADDRINUSE` answered as "another ivdoom host is still running", `close()` also closes keep-alive sockets |
+| `src/host/server.ts` | `node:https` when `.gener/devcert` exists, else `node:http`. Own port (`DEFAULT_TLS_PORT` 8043 / `DEFAULT_HTTP_PORT` 8000 — not 8443/8080, see «Measured»), 4 MB body cap, `EADDRINUSE` answered with BOTH possible causes named (our previous run, or a foreign program ⇒ `--port <n>`), `close()` also closes keep-alive sockets |
 | `src/http/handlers.ts` | every route, no `@azure/functions`. Bodies copied from the versions the page and the game already speak: status codes, JSON shapes, and a REFUSED POST always printing |
 | `src/input/{protocol,reducer,store}.ts` | LEVEL-vs-EDGE input broker. `stick` is a level (held → held until released); presses are edges carried to a cursor |
 | `src/game/{doom-keys,remote-control,render,scale}.ts` | phone frame → engine key lines on the engine's stdin; frames out of fd 3 |
@@ -143,8 +144,28 @@ So a crisp UI capture comes from a 2× **device** scale, not from CSS zoom on a 
 lesson as the GIF: bake it, don't ask the viewer to scale it. The README shows that file at `width="960"`,
 i.e. the CSS size it was laid out at, which makes the browser *downscale* 2:1 (the direction that stays sharp
 when no `image-rendering` survives). `--port` is real because `scripts/doom-device.cjs:271` reads
-`argValue(argv,'port')`; `yarn kill` frees only 8443/8080, so a foreign holder of 8080 makes the runner say
-"another ivdoom host is still running" — true, and not the whole reason.
+`argValue(argv,'port')`; the 8080 default is gone because that collision happened twice on this machine (the
+Strata python runtime holds 8080 — `ss -ltnp` shows `python pid=1690`), which is why `DEFAULT_HTTP_PORT` is
+8000 and `DEFAULT_TLS_PORT` is 8043 now. Verified after the change, `node scripts/doom-device.cjs --host-only`
+with no `--port`:
+
+```
+[host] node:http  0.0.0.0:8000      ← no devcert, so plain; DEFAULT_HTTP_PORT
+GET /api/doom/version → 200 {"repo":"ivdoom", ... "pid":<the same pid as the caller>}
+lsof -ti:8043 -ti:8000 | xargs -r kill -9   (yarn kill) → 8000 released, nothing left listening
+```
+
+And the device side of the same run (`yarn play` before the port change, 20:2x) — the FIRST panel contact in
+this repo's own history, and the panel was healthy:
+
+```
+canary before: ✅ device answering | answered 3/3  median 41ms  slowest 67ms
+               ✅ clean: median is in the 30-70ms band measured for an idle device.
+port 8080 is busy …  ❌ the runner stopped before any game frame; the panel kept the LAST frame it was given
+```
+
+That is the signature this repo documents: a green canary + a panel holding an old frame = the failure is on
+this side of the wire, not the panel's.
 
 ## NOT proven / open (do not silently "fix")
 
@@ -153,7 +174,8 @@ when no `image-rendering` survives). `--port` is real because `scripts/doom-devi
    and the page/manifest/icon answer 200 with a real secure context — but **"it will install" is still
    unproven**: it needs the phone (or `yarn ui:install-check` over adb). If Chrome still refuses, suspect #1 is
    the **SVG icon with `sizes:"any"`** vs Chrome wanting a raster PNG; suspect #2 is the CA not being trusted.
-   Open the page at `https://<box>:8443/api/doom/ui/` with `.gener/devcert/dev.crt` installed as a CA.
+      Open the page at `https://<box>:8043/api/doom/ui/` (TLS port = `DEFAULT_TLS_PORT`) with
+   `.gener/devcert/dev.crt` installed as a CA.
 2. **`--push 64` playability.** Only **32** has ever been measured playable on this panel, and E1M2 is dark
    (mean luma ≈36, lit>60 ≈11%) compared with E1M5 (≈103, ≈82%). What the panel shows at 64 is readable
    **only by the person standing in front of it**.

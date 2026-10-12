@@ -54,7 +54,7 @@ yarn cert     # .gener/devcert/{dev.crt,dev.key}; SAN from os.networkInterfaces(
 yarn play     # page + broker + hud + engine + panel, one command
 ```
 
-`yarn play` then prints the URL the phone should open, e.g. `https://IPorHost:8443/api/doom/ui/` — install
+`yarn play` then prints the URL the phone should open, e.g. `https://IPorHost:8043/api/doom/ui/` — install
 `dev.crt` as a CA on the phone first, or you get a certificate warning (and no install option).
 
 Everything else: `yarn play:32`, `yarn play:demo` (no phone), `yarn serve` (page only, no engine, no panel),
@@ -66,7 +66,7 @@ for what each one is for.
 | | |
 |---|---|
 | `scripts/doom-device.cjs` | the entry point: args → start the host → build the engine argv → spawn → frames from fd 3 → crop+scale → push to the panel → `Ctrl-C` releases every key and closes the engine **then** the host |
-| `src/host/server.ts` | `node:https` when `.gener/devcert` exists, else `node:http`. Own port (8443 / 8080). TLS is terminated **here**, because a certificate only helps if it is valid for the address the phone types |
+| `src/host/server.ts` | `node:https` when `.gener/devcert` exists, else `node:http`. Own port (`DEFAULT_TLS_PORT` 8043 / `DEFAULT_HTTP_PORT` 8000 — not 8443/8080: 8080 is held by another runtime on the machine this is developed on, and `--port <n>` overrides it). TLS is terminated **here**, because a certificate only helps if it is valid for the address the phone types |
 | `src/http/handlers.ts` | every route: `/ui/`, `/input`, `/input/state`, `/input/sessions`, `/hud`, `/hud/state`, `/hud/image`, `/version` |
 | `src/input/` | the broker between phone and player. A held stick is a **level** (held until released); taps are **edges** carried to a cursor. Phone and engine read the same session |
 | `src/game/` | phone frame → engine key lines; engine frames → the panel's 64×64 or 32×32 |
@@ -89,7 +89,8 @@ reported `24.00 fps` and the file was really 57.6 s.
 
 Not proven here, and deliberately not "fixed": whether **Android Chrome offers "Install app"** on your phone
 (it needs the phone), and whether 64×64 is playable on the panel (only 32×32 has been measured playable;
-the default stage `--warp 1 2` is a dark map, mean luma ≈36). Details and the open questions are in
+the map that measurement was taken on (E1M2) is a dark one, mean luma ≈36; which stage and width the scripts
+ask for live in `package.json` and are edited there). Details and the open questions are in
 [AGENTS.md](AGENTS.md).
 
 ## Notes
@@ -102,10 +103,11 @@ the default stage `--warp 1 2` is a dark map, mean luma ≈36). Details and the 
   drift — the pacing numbers in `src/pixoo/pacing.ts` are this repo's to change.
 - The GIF and the controller PNG in `assets/` are committed on purpose: a README with no picture is a claim
   about what the thing looks like.
-- `yarn serve` and `yarn play` default to 8080 / 8443, and `yarn kill` frees exactly those two. If another
-  program already holds 8080 the runner answers "another ivdoom host is still running" — true, but not the whole
-  story: `--port N` is read by the runner, so `node scripts/doom-device.cjs --host-only --port 8091` serves the
-  page without touching anyone else's port.
+- `yarn serve` and `yarn play` bind `8000` (plain) or `8043` (when a dev cert exists), and `yarn kill` frees
+  exactly those two. They are **not** 8080/8443: on this machine 8080 belongs to another runtime, and a busy
+  port is answered with both possible causes named (our previous run, or a program that is not ivdoom). In the
+  second case `--port <n>` moves this run — measured: `node scripts/doom-device.cjs --host-only --port 8091`
+  served `/api/doom/ui/` 200 while another program held 8080.
 
 ## Development
 

@@ -61,8 +61,8 @@ const cases = [
   /* The DEMO path must not change at all: every frame number in AGENTS.md was measured through it. */
   { label: 'DEMO path unchanged: without `--input remote` it is `-playdemo DEMO1`, no `-warp`', flags: [], want: ['-playdemo DEMO1'], reject: ['-warp'], never: ['--warp'] },
   /* `whole: true` asserts on the FULL output, because what matters is what a run does NOT print. A flag that
-     only prints a decision must not quietly bind port 8443 - `yarn play` owns that port and a second listener
-     is how EADDRINUSE gets blamed on the game. */
+     only prints a decision must not quietly bind a port at all - `yarn play` owns the DEFAULT_*_PORT pair of
+     src/host/server.ts, and a second listener is how EADDRINUSE gets blamed on the game. */
   { label: '`--print-argv` starts NOTHING in a repo where the runner owns the host: no port, no [host] line', flags: ['--input', 'remote', '--print-argv'], want: ['print-argv'], reject: ['[host]', 'engine argv', 'EADDRINUSE'], whole: true },
   /* The mistake this catches is the one that would otherwise appear much later, on the phone, as "the
      controller does nothing": `--no-host` says "someone else owns /input" and `--api` says who. */
