@@ -80,6 +80,21 @@ boundary at `--seconds`/`--push`, default `-warp 1`, first-match wins, DEMO path
 binds no port, `--no-host` without `--api` fails naming *nothing owns /input*); the launcher half prints
 SKIPPED because there is no launcher here. `yarn doom:keys-check` 13/13.
 
+`yarn demo:gif` (the README's clip) — and the bug it found in this repo's own generator:
+```
+engine: DG_HEADLESS done frames=1545 wall_ms=44151 fps=34.99     ← 1545 consecutive DEMO1 frames, real time
+first run  → the script printed "avg=41.67ms nominal_fps=24.00"
+the file   → PIL read back 1433 frames, delays {40,80,120}, sum 57 600 ms = 24.88 fps   ❌ 2.4 s short
+fixed      → delays built in 10 ms GIF units: 1200×40 ms + 240×50 ms = 60 000 ms exactly
+the file   → PIL read back sum 60 000 ms = 60.00 s, 64×64, loop=infinite, 5 308 239 B          ✅
+```
+A GIF stores a delay in hundredths of a second, so 41.67 ms was silently written as 40 ms. The arithmetic was
+correct and the output was wrong — the generator never read its own file. `exactDelays` now quantises to 10 ms
+steps and prints a warning when a requested length is not representable at all; `250 ms / 6 frames` still
+produces the recorded `[40,40,40,40,40,50]`, which is why the old code passed its own test for two days.
+Note the honest limit, printed in the README too: 1440 consecutive frames are 41.1 s of demo time at DOOM's
+35 tics/s shown over 60.00 s = **0.69× game speed**; real-time 24 fps would mean dropping engine frames.
+
 ## NOT proven / open (do not silently "fix")
 
 1. **Android install.** The install menu disappeared at 17:11 because the phone got the *forwarder's* 502 text,

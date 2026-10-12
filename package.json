@@ -30,7 +30,8 @@
         "doom:tap-check": "node scripts/doom-tap-check.cjs",
         "doom:stages": "node scripts/doom-stage-probe.cjs",
         "doom:preview": "node scripts/doom-preview.cjs",
-        "doom:gif": "node scripts/doom-gif.cjs"
+        "doom:gif": "node scripts/doom-gif.cjs",
+        "demo:gif": "yarn build && node scripts/doom-gif.cjs --groups 1 --frames 1440 --gif-ms 60000 --size 64 --no-border --loop 0 --prefix doom-demo-60s-24fps --skip-s 3 --install assets"
     },
     "dependencies": {
         "@codepunkt/wasm-layout-text": "^3.0.0",

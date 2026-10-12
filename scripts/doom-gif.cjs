@@ -30,12 +30,15 @@
  * reason the frame-number baseline exists: the panel is the only display we have, and without a marker
  * "which group played, and in what order" is not answerable afterwards. `--no-border` removes it.
  *
- * Output:  PNG frames + a manifest + the GIFs in .gener/doom-gif/, and the GIFs COPIED into the web
- * directory that this machine already serves (`--install`, default /home/tommy/repo/Strata/serve/web), so
- * they are reachable at `--url-base` (default http://192.168.1.16:8080/ui/web/) - verified mapping:
- * a file in serve/web/ answers at /ui/web/<file> (HTTP 200), /ui/<file> answers 404.
+ * Output: PNG frames + a manifest + the GIFs in .gener/doom-gif/. `--install <dir>` additionally COPIES the
+ * GIFs there - and in ivdoom the default is NONE, which is a fix, not a simplification: the default this
+ * file arrived with was `/home/tommy/repo/Strata/serve/web`, a directory of ANOTHER repo on another machine.
+ * Running `yarn doom:gif` here would have quietly written files into a project that has no idea this one
+ * exists. ivdoom serves no static web directory either - `src/host/server.ts` answers under /api/doom only -
+ * so a GIF meant for the README is committed as a file (`--install assets`), and its URL is not printed.
  *
- * Play them on the panel with: node scripts/play-net-gif.cjs   (wraps Device/PlayTFGif FileType 2)
+ * Play them on the panel with `Device/PlayTFGif FileType 2`: the wrapper `scripts/play-net-gif.cjs` stayed
+ * in the dashboard repo (it is a panel probe, not a game step), and it reads the manifest written here.
  *
  * Usage: node scripts/doom-gif.cjs [--groups 4] [--frames 6] [--gif-ms 250] [--size 64]
  *                                 [--crop square|wide] [--filter box|nearest] [--no-border]
@@ -45,7 +48,17 @@
  *                                 deterministic at DOOM_MAX_TPS=35 tics/s, so an offset is just "capture
  *                                 skip+N frames, drop the first skip". It changes ONLY the content: frames,
  *                                 delays, size and loop stay byte-for-byte comparable to the t=0 run.
- * Requires: yarn build (dist/game/scale.js) and make -C scripts/doom (unless --skip-engine reuse)
+ * ONE LONG GIF, AT A WANTED LENGTH (asked 2026-10-12 18:29: "use the engine to render 60s @64px 24fps demo
+ * gif, add to readme"): there is no separate mode for it, because it is the SAME contract with different
+ * numbers - `--groups 1 --frames 1440 --gif-ms 60000` is 1440 frames whose delays sum to exactly 60 000 ms,
+ * i.e. 24.00 fps nominal. What the numbers canNOT change is the game clock: the engine renders at 35 tics/s,
+ * so 1440 consecutive engine frames are 41.1 s of DEMO1 game time shown over 60.00 s = 0.69x, slow motion.
+ * Saying so is the point; a README demo that quietly played at 0.69x speed would be a claim, not a caption.
+ * (Real-time at 24 fps would mean DROPPING engine frames, which this file does not do - the frame sequence
+ * it captures is the sequence the engine produced. That is a deliberate limit, not an oversight.)
+ *
+ * Requires: yarn build (dist/game/scale.js) and `yarn engine` (.gener/build/doom/doom-headless), plus
+ * python3 with Pillow for scripts/gif-assemble.py - the only GIF89a writer available on this machine.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -77,14 +90,35 @@ const loadDist = async (rel) => import(url.pathToFileURL(path.join(REPO, 'dist',
 /** Device GIF sizes the firmware accepts (src/pixoo/api.ts playTFGif doc: 16, 32, 64). */
 const ALLOWED_SIZES = [16, 32, 64];
 
-/** Frame delays in ms that sum to EXACTLY `totalMs` over `n` frames (integer milliseconds). */
+/**
+ * Frame delays that sum to EXACTLY `totalMs`, in units a GIF CAN STORE.
+ *
+ * THE UNIT IS 10 ms, AND THAT IS NOT A DETAIL - IT IS THE BUG THIS REPLACES. A GIF delay field counts
+ * hundredths of a second, so 41.67 ms cannot be written; the value written was 4, i.e. 40 ms per frame.
+ * Measured on the first 1440-frame run: the file reported `avg=41.67ms nominal_fps=24.00`, and reading the
+ * GIF back with PIL answered 57 600 ms / 24.88 fps - 2.4 s shorter than the 60.00 s this script had just
+ * claimed. The generator's own arithmetic was right and the OUTPUT was wrong, because the arithmetic was done
+ * in a unit the format does not have.
+ *
+ * So: build the delays in 10 ms steps. `60000 ms / 1440 frames` becomes 1200 frames at 40 ms + 240 frames at
+ * 50 ms = 60 000 ms exactly. And the documented baseline is untouched - 250 ms over 6 frames still comes out
+ * as the recorded [40,40,40,40,40,50], because those numbers were already representable (which is exactly why
+ * the original code passed its own test and left this latent for 60 s runs to find).
+ *
+ * A total that is NOT a multiple of 10 ms is not representable at all; it says so and shortens the animation
+ * by the un-putdownable remainder instead of silently lying about the length. Extra units go on the LAST
+ * frames, unchanged: identical leading frames are what make one group comparable with the next.
+ */
 const exactDelays = (n, totalMs) => {
-  const base = Math.floor(totalMs / n);
-  const remainder = totalMs - base * n;
-  // put the extra milliseconds on the LAST frames: the first frames of every group are identical, which
-  // is what makes a group boundary comparable across groups.
+  const unit = 10;
+  const base = Math.floor(totalMs / (n * unit)) * unit;
+  const leftover = totalMs - base * n;
+  const extra = Math.floor(leftover / unit);
+  if (leftover % unit) {
+    console.log(`! ${totalMs}ms over ${n} frames is not representable in 10 ms GIF units: writing ${base * n + extra * unit}ms, ${leftover % unit}ms is unrepresentable`);
+  }
   const out = new Array(n).fill(base);
-  for (let i = n - remainder; i < n; i++) out[i] += 1;
+  for (let i = n - extra; i < n; i++) out[i] += unit;
   return out;
 };
 
@@ -167,8 +201,12 @@ const main = async () => {
   const cropMode = argValue(argv, 'crop', 'square');
   const filter = argValue(argv, 'filter', 'box');
   const prefix = argValue(argv, 'prefix', 'doom24');
-  const installDir = argValue(argv, 'install', '/home/tommy/repo/Strata/serve/web');
-  const urlBase = argValue(argv, 'url-base', 'http://192.168.1.16:8080/ui/web/');
+  /* Default: write nothing outside .gener/doom-gif/. See the header - the value this file arrived with
+     pointed at another repo's served directory, and a generator must not write into a project that never
+     asked for it. Pass `--install assets` (relative paths resolve from this repo) when a GIF is meant to be
+     committed, e.g. the one in README.md. */
+  const installDir = argValue(argv, 'install', '');
+  const urlBase = argValue(argv, 'url-base', '');
   const loop = Number(argValue(argv, 'loop', '0'));
     const border = !has(argv, 'no-border');
     const totalFrames = groupsCount * framesPerGroup;
@@ -269,22 +307,37 @@ const main = async () => {
 
   const installed = [];
   if (installDir) {
-    fs.mkdirSync(installDir, { recursive: true });
+    /* Relative `--install assets` has to resolve THIS repo, not whatever directory the caller happened to
+       start in - a copy that lands in the wrong place is a file nobody can find later. */
+    const target = path.isAbsolute(installDir) ? installDir : path.join(REPO, installDir);
+    fs.mkdirSync(target, { recursive: true });
     for (const group of manifest.groups) {
       const from = path.join(OUT_DIR, group.name);
-      const to = path.join(installDir, group.name);
+      const to = path.join(target, group.name);
       fs.copyFileSync(from, to);
-      installed.push({ name: group.name, path: to, url: new URL(group.name, urlBase).href, bytes: fs.statSync(to).size });
+      /* A URL is only reported when a `--url-base` was actually given. With the default now empty,
+         `new URL(name, '')` would throw on a line that is only cosmetic - and a generator that crashes
+         AFTER writing the file it was asked for is the worst kind of failure to debug. */
+      installed.push({
+        name: group.name,
+        path: to,
+        url: urlBase ? new URL(group.name, urlBase).href : '',
+        bytes: fs.statSync(to).size,
+      });
     }
   }
 
   console.log('');
-  console.log('served as (map: serve/web/<file> -> /ui/web/<file>; this was verified with HTTP 200):');
-  for (const [i, item] of installed.entries()) {
-    console.log(`  group ${i + 1}  border=${border ? BORDER_COLOURS[i % BORDER_COLOURS.length].map((c) => c.toString(16).padStart(2, '0')).join('') : 'off'}  ${item.bytes} bytes  ${item.url}`);
+  if (installed.length) {
+    console.log(`copied into ${installDir}:`);
+    for (const [i, item] of installed.entries()) {
+      console.log(`  group ${i + 1}  border=${border ? BORDER_COLOURS[i % BORDER_COLOURS.length].map((c) => c.toString(16).padStart(2, '0')).join('') : 'off'}  ${item.bytes} bytes  ${item.path}${item.url ? `  ${item.url}` : ''}`);
+    }
+  } else {
+    console.log('not copied anywhere (--install not given): ivdoom serves no static web directory, see the header');
   }
   console.log('');
-    console.log(`play on the panel: node scripts/play-net-gif.cjs --gap ${gifMs}   (Device/PlayTFGif FileType 2, one per GIF)`);
+  console.log(`to play one group on the panel: Device/PlayTFGif FileType 2 with a URL the panel can fetch - the wrapper scripts/play-net-gif.cjs lives in the dashboard repo, and reads ${path.join(OUT_DIR, 'manifest.json')}`);
   console.log(`frames kept for inspection: ${path.join(OUT_DIR, 'frames')}`);
 };
 
