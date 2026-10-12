@@ -1,7 +1,7 @@
 {
     "name": "ivdoom",
     "version": "1.0.0",
-    "description": "DOOM on a real Pixoo 64 panel, driven by a phone controller. ONE Node process: the controller page, the input broker, the status-strip cache, the panel supply loop and the headless engine.",
+                "description": "DOOM run in Node.js: the engine is ozkl/doomgeneric built here with our dg_stdio.c shim as .gener/build/doom/doom-headless (a child process of this Node process, playing freedoom1.wad); the picture goes to a real Pixoo 64 panel and the controls come from a phone virtual-controller PWA. ONE Node process for the page, the input broker, the status-strip cache, the panel supply loop and the engine.",
     "license": "UNLICENSED",
     "private": true,
     "type": "module",

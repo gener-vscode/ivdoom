@@ -34,3 +34,6 @@ test-results/
 # --- Misc ---
 *.tsbuildinfo
 .eslintcache
+
+# --- Playwright MCP output (screenshots, page snapshots, console logs) ---
+.playwright-mcp/

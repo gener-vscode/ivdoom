@@ -1,6 +1,14 @@
 # ivdoom
 
-DOOM on a real **Pixoo 64** panel (64×64 WS2812 matrix), driven by a **phone** over the LAN.
+DOOM **runs here, in Node.js**. The game engine is **[doomgeneric](https://github.com/ozkl/doomgeneric)**:
+`yarn engine` clones it into `.gener/vendor/doomgeneric` and `scripts/doom/Makefile` builds it with our own
+`scripts/doom/dg_stdio.c` shim into `.gener/build/doom/doom-headless`, which is spawned as a **child process**
+of this repo's Node process and plays **FreeDOOM 1** (`freedoom1.wad`). Its 320×200 frames are scaled down by
+this process and pushed over the LAN to a real **Pixoo 64** panel (64×64 WS2812 matrix).
+
+The controls come from a **phone** — the virtual-gamepad PWA that this same process serves. The phone never runs
+DOOM: it posts a stick **level** and key **edges** to the broker, and reads back a status strip that a 64×64
+panel cannot show.
 
 One Node process. The controller page, the input broker, the status-strip cache, the panel supply loop and the
 headless engine all run in the same PID — no Azure Functions host, no TLS forwarder, no second service. The one
@@ -25,6 +33,18 @@ stdin and read back as raw frames on fd 3.
 > `AGENTS.md` for the ladder, and for the byte cost of baking the pixels instead (128 px = 11 117 631 B up to
 > 512 px = 57 478 525 B, which is why the file stays 64×64).
 
+## The controller — the phone's entire interface
+
+<img src="assets/ui-controller-2x.png" width="960" alt="The controller page at 960x440: left half is a press-anywhere direction stick, the right half is tap-low for the main action, tap-high for the other one, slide sideways to switch" />
+
+> That page was served by `node scripts/doom-device.cjs --host-only --port 8091` with **no engine and no panel
+> attached**, so the pads are live to the broker while the strip honestly says `game hud: waiting`. The file is
+> 1920×880 because it was captured in headless Chromium at a **960×440 CSS viewport with `deviceScaleFactor: 2`**
+> — the two-thumb layout a landscape phone gets, rasterised at 2× (269 493 B). Asking for `width="960"` here
+> makes the browser **downscale** it 2:1, which is the direction that stays sharp without any CSS. `zoom: 2` was
+> tried first and clipped the picture: this page sizes itself in `vh`, so zooming it makes it taller than the
+> viewport.
+
 ## Run it
 
 ```bash
@@ -34,7 +54,7 @@ yarn cert     # .gener/devcert/{dev.crt,dev.key}; SAN from os.networkInterfaces(
 yarn play     # page + broker + hud + engine + panel, one command
 ```
 
-`yarn play` then prints the URL the phone should open, e.g. `https://192.168.1.16:8443/api/doom/ui/` — install
+`yarn play` then prints the URL the phone should open, e.g. `https://IPorHost:8443/api/doom/ui/` — install
 `dev.crt` as a CA on the phone first, or you get a certificate warning (and no install option).
 
 Everything else: `yarn play:32`, `yarn play:demo` (no phone), `yarn serve` (page only, no engine, no panel),
@@ -80,5 +100,21 @@ the default stage `--warp 1 2` is a dark map, mean luma ≈36). Details and the 
 - There is **no shared layer** with the dashboard this was split out of (`../pixoo`): no `file:../pixoo`, no
   third package. `src/input`, `src/pixoo`, `src/hud`, `src/ui` and `resources/ui` are copies here, so they can
   drift — the pacing numbers in `src/pixoo/pacing.ts` are this repo's to change.
-- The GIF in `assets/` is committed on purpose: a README with no picture is a claim about what the thing looks
-  like.
+- The GIF and the controller PNG in `assets/` are committed on purpose: a README with no picture is a claim
+  about what the thing looks like.
+- `yarn serve` and `yarn play` default to 8080 / 8443, and `yarn kill` frees exactly those two. If another
+  program already holds 8080 the runner answers "another ivdoom host is still running" — true, but not the whole
+  story: `--port N` is read by the runner, so `node scripts/doom-device.cjs --host-only --port 8091` serves the
+  page without touching anyone else's port.
+
+## Development
+
+The DOOM integration, the single-process host, the probe/check scripts and the fixes in this repo were produced
+by an agent workflow, not typed by hand: **`flash-3.8-flash-next-iq3_xxs` (Strata)** and **
+[Gener](https://marketplace.visualstudio.com/items?itemName=tommyli.gener)**, a VS Code extension, did the
+spawning of the engine, the reading of its fd 3 output, and the re-reading of every file they wrote.
+
+Read the claims in that light: each number in [AGENTS.md](AGENTS.md) came from running the shipped code and
+asserting on its output, and anything that could not be checked here — whether Chrome offers *Install app* on
+your phone, whether 64×64 is playable on your panel — is listed under *NOT proven/what is not* instead of being
+quietly asserted.

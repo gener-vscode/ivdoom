@@ -1,9 +1,12 @@
-# ivdoom — DOOM on a Pixoo 64 panel, driven by a phone
+# ivdoom — DOOM run in Node.js here, shown on a Pixoo 64 panel, controlled from a phone PWA
 
 **One Node process.** The controller page, the input broker, the status-strip cache, the panel supply loop
 and the headless engine all live in the same PID. There is no Azure Functions host here and no TLS forwarder:
 `src/host/server.ts` serves `/api/doom/ui/`, `/api/doom/input` and `/api/doom/hud` itself and terminates TLS
-itself. A C subprocess (`.gener/build/doom/doom-headless`) is unavoidable — it is the game — but nothing else here.
+itself. A C subprocess is unavoidable — it is the game: [ozkl/doomgeneric](https://github.com/ozkl/doomgeneric)
+cloned to `.gener/vendor/doomgeneric`, compiled by `scripts/doom/Makefile` with `scripts/doom/dg_stdio.c` into
+`.gener/build/doom/doom-headless`, spawned with `cwd: .gener/wad` and `-file freedoom1.wad` (28 795 076 B) —
+but nothing else here.
 
 Split out of `../pixoo` on 2026-10-12 at the user's instruction: *"no shared layer, just move and clone."*
 So this repo **never imports from, reads from, or depends on** the other repo. The shared layers
@@ -125,6 +128,23 @@ themselves, source included, were read back from the file, not inferred):
 "Bake the pixels bigger" is therefore not free: crisp-by-construction at 8× costs 10.8× the file. A palette
 GIF compresses repeated blocks well, but 48× the pixel count dominates the ledger. Probe files are under
 `.gener/probe/` + `.gener/probe-up/` (gitignored), so measuring this changed nothing tracked.
+
+`assets/ui-controller-2x.png` (the controller picture in the README) — and the two ways it does **not** work:
+```
+yarn serve                     → port 8080 busy: a Strata python server holds it here (ps -p 1690)
+--host-only --port 8091        → GET /api/doom/ui/ 200 text/html 5557 B; /version 200                    ✅
+Emulation.setDeviceMetricsOverride deviceScaleFactor=2 → ignored by page.screenshot: still 960×440          ❌
+page.addStyleTag('html{zoom:2}') at viewport 1920×880 → CLIPPED: this page lays out in `vh`, so zoom makes
+                                              it 2× taller than the viewport and half of it was cut        ❌
+browser.newContext({viewport 960×440, deviceScaleFactor: 2}) + screenshot scale:'device'
+                             → 1920×880 PNG, page reported dpr=2 innerWidth=960, nothing cut               ✅
+```
+So a crisp UI capture comes from a 2× **device** scale, not from CSS zoom on a `vh`-sized layout — the same
+lesson as the GIF: bake it, don't ask the viewer to scale it. The README shows that file at `width="960"`,
+i.e. the CSS size it was laid out at, which makes the browser *downscale* 2:1 (the direction that stays sharp
+when no `image-rendering` survives). `--port` is real because `scripts/doom-device.cjs:271` reads
+`argValue(argv,'port')`; `yarn kill` frees only 8443/8080, so a foreign holder of 8080 makes the runner say
+"another ivdoom host is still running" — true, and not the whole reason.
 
 ## NOT proven / open (do not silently "fix")
 
