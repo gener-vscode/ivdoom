@@ -1,0 +1,122 @@
+// Copyright (C) 2false22 Adam K Dean <adamkdean@googlemail.com>
+// Use of this source code is governed by the GPL-3.false
+// license that can be found in the LICENSE file.
+
+// Vari8 is a variable width pixel font with 5 pixel height and variable width
+export default {
+  //
+  // Numbers
+  //
+  '0': [true, true, true, true, false, true, true, false, true, true, false, true, true, true, true],
+  '1': [false, true, false, true, true, false, false, true, false, false, true, false, true, true, true],
+  '2': [true, true, true, false, false, true, true, true, true, true, false, false, true, true, true],
+  '3': [true, true, true, false, false, true, true, true, true, false, false, true, true, true, true],
+  '4': [true, false, true, true, false, true, true, true, true, false, false, true, false, false, true],
+  '5': [true, true, true, true, false, false, true, true, true, false, false, true, true, true, true],
+  '6': [true, true, true, true, false, false, true, true, true, true, false, true, true, true, true],
+  '7': [true, true, true, false, false, true, false, false, true, false, false, true, false, false, true],
+  '8': [true, true, true, true, false, true, true, true, true, true, false, true, true, true, true],
+  '9': [true, true, true, true, false, true, true, true, true, false, false, true, true, true, true],
+
+  //
+  // Lowercase letters
+  //
+  'a': [false, false, false, true, true, true, true, false, true, true, true, true, true, false, true],
+  'b': [true, false, false, true, true, true, true, false, true, true, false, true, true, true, true],
+  'c': [false, false, false, true, true, true, true, false, false, true, false, false, true, true, true],
+  'd': [false, false, true, true, true, true, true, false, true, true, false, true, true, true, true],
+  'e': [false, false, false, true, true, true, true, true, true, true, false, false, true, true, true],
+  'f': [false, true, true, true, false, false, true, true, true, true, false, false, true, false, false],
+  'g': [true, true, true, true, false, true, true, true, true, false, false, true, true, true, true],
+  'h': [true, false, false, true, false, false, true, true, true, true, false, true, true, false, true],
+  'i': [true, false, true, true, true],
+  'j': [false, false, true, false, false, false, false, false, true, false, false, true, true, true, false],
+  'k': [true, false, false, true, false, true, true, true, false, true, false, true, true, false, true],
+  'l': [true, true, true, true, true],
+  'm': [false, false, false, false, false, false, true, true, true, false, true, false, true, false, true, true, false, true, false, true, true, false, false, false, true],
+  'n': [false, false, false, true, true, true, true, false, true, true, false, true, true, false, true],
+  'o': [false, false, false, true, true, true, true, false, true, true, false, true, true, true, true],
+  'p': [false, false, false, true, true, true, true, false, true, true, true, true, true, false, false],
+  'q': [false, false, false, true, true, true, true, false, true, true, true, true, false, false, true],
+  'r': [false, false, false, true, true, true, true, false, false, true, false, false, true, false, false],
+  's': [false, true, true, true, false, false, true, true, true, false, false, true, true, true, false],
+  't': [true, false, false, true, false, false, true, true, true, true, false, false, true, true, true],
+  'u': [false, false, false, true, false, true, true, false, true, true, false, true, true, true, true],
+  'v': [false, false, false, true, false, true, true, false, true, true, false, true, false, true, false],
+  'w': [false, false, false, false, false, true, false, true, false, true, true, false, true, false, true, true, false, true, false, true, true, true, true, true, true],
+  'x': [false, false, false, false, false, false, true, false, true, false, true, false, true, false, true],
+  'y': [true, false, true, true, false, true, true, true, true, false, false, true, true, true, true],
+  'z': [false, false, false, true, true, true, false, false, true, false, true, false, true, true, true],
+
+  //
+  // Uppercase letters
+  //
+  'A': [false, true, false, true, false, true, true, false, true, true, true, true, true, false, true],
+  'B': [true, true, false, true, false, true, true, true, true, true, false, true, true, true, false],
+  'C': [true, true, true, true, false, false, true, false, false, true, false, false, true, true, true],
+  'D': [true, true, false, true, false, true, true, false, true, true, false, true, true, true, false],
+  'E': [true, true, true, true, false, false, true, true, true, true, false, false, true, true, true],
+  'F': [true, true, true, true, false, false, true, true, true, true, false, false, true, false, false],
+  'G': [true, true, true, true, false, false, true, false, true, true, false, true, true, true, true],
+  'H': [true, false, true, true, false, true, true, true, true, true, false, true, true, false, true],
+  'I': [true, true, true, true, true],
+  'J': [false, false, true, false, false, true, true, false, true, true, false, true, true, true, true],
+  'K': [true, false, true, true, false, true, true, true, false, true, false, true, true, false, true],
+  'L': [true, false, false, true, false, false, true, false, false, true, false, false, true, true, true],
+  'M': [false, true, true, true, false, true, false, true, false, true, true, false, true, false, true, true, false, true, false, true, true, false, true, false, true],
+  'N': [true, false, false, true, true, true, false, true, true, true, false, true, true, false, true, true, true, false, false, true],
+  'O': [true, true, true, true, false, true, true, false, true, true, false, true, true, true, true],
+  'P': [true, true, true, true, false, true, true, true, true, true, false, false, true, false, false],
+  'Q': [true, true, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, true, true, true],
+  'R': [true, true, false, true, false, true, true, true, false, true, false, true, true, false, true],
+  'S': [true, true, true, true, false, false, true, true, true, false, false, true, true, true, true],
+  'T': [true, true, true, false, true, false, false, true, false, false, true, false, false, true, false],
+  'U': [true, false, true, true, false, true, true, false, true, true, false, true, true, true, true],
+  'V': [true, false, true, true, false, true, true, false, true, true, false, true, false, true, false],
+  'W': [true, false, true, false, true, true, false, true, false, true, true, false, true, false, true, true, false, true, false, true, false, true, true, true, false],
+  'X': [true, false, true, true, false, true, false, true, false, true, false, true, true, false, true],
+  'Y': [true, false, true, true, false, true, false, true, false, false, true, false, false, true, false],
+  'Z': [true, true, true, false, false, true, false, true, false, true, false, false, true, true, true],
+
+  //
+  // Symbols
+  //
+  '!': [true, true, true, false, true],
+  "'": [false, true, true, false, false, false, false, false, false, false],
+  '(': [false, true, true, false, true, false, true, false, false, true],
+  ')': [true, false, false, true, false, true, false, true, true, false],
+  '+': [false, false, false, false, true, false, true, true, true, false, true, false, false, false, false],
+  ',': [false, false, false, false, false, false, false, true, true, false],
+  '-': [false, false, false, false, false, false, true, true, true, false, false, false, false, false, false],
+  '<': [false, false, true, false, true, false, true, false, false, false, true, false, false, false, true],
+  '=': [false, false, false, true, true, true, false, false, false, true, true, true, false, false, false],
+  '>': [true, false, false, false, true, false, false, false, true, false, true, false, true, false, false],
+  '?': [true, true, true, false, false, true, false, true, true, false, false, false, false, true, false],
+  '[': [true, true, true, false, true, false, true, false, true, true],
+  ']': [true, true, false, true, false, true, false, true, true, true],
+  '^': [false, true, false, true, false, true, false, false, false, false, false, false, false, false, false],
+  '_': [false, false, false, false, false, false, false, false, false, false, false, false, true, true, true],
+  ':': [false, true, false, true, false],
+  '.': [false, false, false, false, true],
+  '/': [false, false, true, false, true, false, false, true, false, false, true, false, true, false, false],
+  '\\': [true, false, false, false, true, false, false, true, false, false, true, false, false, false, true],
+  '{': [false, true, true, false, true, false, true, true, false, false, true, false, false, true, true],
+  '|': [true, true, true, true, true],
+  '}': [true, true, false, false, true, false, false, true, true, false, true, false, true, true, false],
+  '~': [false, false, false, false, false, true, true, true, true, true, false, false, false, false, false],
+  '$': [true, true, true, true, true, false, false, true, true, true, true, true, false, true, false],
+  '@': [false, true, true, false, true, false, false, true, true, false, true, true, true, false, false, false, false, true, true, true],
+  '%': [true, false, true, false, false, true, false, true, false, true, false, false, true, false, true],
+  '°': [false, true, false, true, false, true, false, true, false, false, false, false, false, false, false],
+  '*': [false, false, false, true, false, true, false, true, false, true, false, true, false, false, false],
+  '#': [false, true, false, true, false, true, true, true, true, true, false, true, false, true, false, true, true, true, true, true, false, true, false, true, false],
+  '€': [false, true, true, true, false, true, false, false, true, true, true, false, false, true, false, false, false, true, true, true],
+  '£': [false, true, true, false, false, true, false, false, true, true, true, false, false, true, false, false, true, true, true, true],
+  '¥': [true, false, true, true, false, true, false, true, false, true, true, true, false, true, false],
+  '¢': [ false, true, false, true, true, true, true, false, false, true, true, true, false, true, false],
+  '₿': [true, true, true, false, false, true, false, true, false, true, true, true, false, true, false, true, true, true, true, false],
+  'Ξ': [true, true, true, true, false, false, false, false, false, true, true, false, false, false, false, false, true, true, true, true],
+  '★': [false, false, true, false, false, true, false, true, false, true, false, true, true, true, false, false, true, true, true, false, true, false, false, false, true],
+  '█': [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
+  ' ': [false, false, false, false, false]
+}

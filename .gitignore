@@ -1,0 +1,36 @@
+# --- Dependencies ---
+node_modules/
+# --- Build output ---
+dist/
+dist-standalone/
+out/
+build/
+# --- Logs & temp ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+# --- Environment ---
+.env
+.env.local
+.env.*.local
+# --- IDE / editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# --- Test / coverage ---
+coverage/
+.nyc_output/
+test-results/
+# --- Gener agent workspace ---
+.gener/
+.agents/
+# --- Misc ---
+*.tsbuildinfo
+.eslintcache

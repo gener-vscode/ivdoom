@@ -1,0 +1,270 @@
+/* Two-thumb layout on purpose: left = direction, right = action. The middle column is a HUD and is
+ * deliberately not touchable, so a thumb can never steal the gestures it is watching. */
+
+:root {
+  --app-h: 100dvh;
+  --ink: #eaf6ff;
+  --dim: #7c93a8;
+  --bg: #04070c;
+  --pad-border: #1c2a38;
+  --stick: #38d0ff;
+  --action: #ff9f1c;
+  --good: #2ecc71;
+  --bad: #ff4d4f;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  /* dvh (dynamic viewport height) is the value that follows the browser chrome when it appears or
+   * hides; app.js also writes --app-h from visualViewport as the fallback. Never 100vh here. */
+  height: var(--app-h);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 15px/1.35 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.fatal { padding: 24px; color: var(--bad); }
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: var(--app-h);
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+
+/* ---------------------------------------------------------------- top bar */
+#bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pad-border);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.badge { color: var(--dim); white-space: nowrap; }
+.badge--good { color: var(--good); }
+.badge--bad { color: var(--bad); }
+.badge--warn { color: var(--action); display: none; }
+body[data-zoomed] .badge--warn { display: inline; }
+.spacer { flex: 1 1 auto; }
+
+.btn {
+  border: 1px solid var(--pad-border);
+  background: #0b1219;
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 11px;
+}
+.btn:active { background: #16222e; }
+
+/* ---------------------------------------------------------------- pads */
+#field {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 34% 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  min-height: 0;
+}
+
+.pad {
+  position: relative;
+  border: 1px solid var(--pad-border);
+  border-radius: 14px;
+  background: radial-gradient(120% 120% at 50% 50%, #0a1119 0%, #05090f 70%);
+  overflow: hidden;
+}
+.pad--left { --accent: var(--stick); }
+.pad--right { --accent: var(--action); }
+.pad[data-here] { border-color: color-mix(in srgb, var(--accent) 60%, var(--pad-border)); }
+
+.pad__frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72%;
+  height: 72%;
+  transform: translate(-50%, -50%);
+  border: 1px dashed color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 50%;
+}
+
+/* The action pad has TWO verbs, chosen by which half the finger lands in (app.js `rightHalf`). This line
+   is the only thing that makes that split visible; it is decorative, so it is aria-hidden in the markup and
+   sits at exactly the same midline the code measures (top: 50% of the pad). */
+.pad__split {
+  position: absolute;
+  left: 14%;
+  top: 50%;
+  width: 72%;
+  height: 1px;
+  transform: translateY(-0.5px);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.pad__label {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--accent) 55%, var(--dim));
+}
+
+.readout {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* The knob follows the finger from wherever the press started; the "home" ring stays put so the eye
+ * still has an origin to read against. */
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--stick) 55%, #06131c) 0%, #071019 75%);
+  border: 1px solid color-mix(in srgb, var(--stick) 45%, transparent);
+  transform: translate(-50%, -50%);
+  opacity: 0.25;
+  will-change: transform;
+}
+body[data-stick] .knob { opacity: 1; }
+
+.flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  height: 40%;
+  transform: translate(-50%, -50%) scale(0.4);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--action) 30%, transparent);
+  border: 1px solid var(--action);
+  opacity: 0;
+}
+.flash[data-fire] { animation: fire 220ms ease-out; }
+@keyframes fire {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.4); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* ---------------------------------------------------------------- HUD column */
+#midCol {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border: 1px solid var(--pad-border);
+  border-radius: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+.mid__slot { font-size: 12px; color: var(--action); letter-spacing: 0.08em; }
+.mid__cmd { font-size: 12px; color: var(--ink); word-break: break-word; }
+.mid__ack { font-size: 11px; color: var(--dim); }
+.mid__hint { font-size: 10px; color: var(--dim); line-height: 1.5; }
+
+/* ---------------------------------------------------------------- portrait gate */
+/* The layout is two thumbs apart; a portrait phone is a different instrument. */
+#rotateGate {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #04070c;
+  text-align: center;
+  padding: 24px;
+  color: var(--action);
+  z-index: 30;
+}
+@media (orientation: portrait) {
+  #rotateGate { display: flex; }
+  #field { opacity: 0.25; }
+}
+
+/* ---------------------------------------------------------------- diagnostics */
+#panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 62%;
+  overflow: auto;
+  background: #070d14;
+  border-top: 1px solid var(--pad-border);
+  padding: 12px 14px calc(12px + var(--safe-bottom));
+  font-size: 11px;
+  z-index: 20;
+}
+#panel[hidden] { display: none; }
+.row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #0e1620; padding: 4px 0; }
+.row span:first-child { color: var(--dim); }
+.note { color: var(--dim); margin-top: 10px; line-height: 1.6; }
+.ok { color: var(--good); }
+.bad { color: var(--bad); }
+
+/* ── STATUS STRIP band · src/hud/ + resources/ui/hud.js ─────────────────────────────────
+ * The PNG carries the LAYOUT: --hud-w/--hud-h come from the frame the game actually produced, so a strip
+ * that reflowed into 2 rows is simply taller. Nothing here guesses a size, and nothing here can clip it.
+ * opacity .3 = the picture has NOT changed; .7 = it really changed (body[data-hud-active], set from a
+ * content signature). A POST arriving is not "movement" - the game posts every second either way.
+ * The image is glyphs on a TRANSPARENT background, so the scrim belongs here and not in the game's pixels. */
+#hudBand {
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: min(100%, calc(var(--hud-w, 320) * 3px));
+  aspect-ratio: var(--hud-w, 320) / var(--hud-h, 20);
+  z-index: 5;
+  /* the pads own every gesture; a HUD layer must never be able to swallow one */
+  pointer-events: none;
+  display: none;
+  opacity: .3;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-color: rgba(4, 7, 12, .45);
+  border-radius: 8px;
+  image-rendering: pixelated;
+  transition: opacity .25s linear;
+}
+body[data-hud] #hudBand { display: block; }
+body[data-hud-active] #hudBand { opacity: .7; }
+#hudBand[data-anchor="bottom"] { bottom: calc(var(--safe-bottom, 0px) + 2px); top: auto; }
+#hudBand[data-anchor="top"], #hudBand:not([data-anchor]) { top: calc(env(safe-area-inset-top, 0px) + 10px); bottom: auto; }
+/* the same numbers as text, in the column that is deliberately not touchable */
+.mid__game { margin-top: 8px; font-size: 11px; line-height: 1.45; color: var(--dim); word-break: break-word; }
+.mid__game--live { color: var(--good); }
+@media (orientation: portrait) { #hudBand { display: none; } }

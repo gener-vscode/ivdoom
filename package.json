@@ -1,0 +1,44 @@
+{
+    "name": "ivdoom",
+    "version": "1.0.0",
+    "description": "DOOM on a real Pixoo 64 panel, driven by a phone controller. ONE Node process: the controller page, the input broker, the status-strip cache, the panel supply loop and the headless engine.",
+    "license": "UNLICENSED",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=24.0.0"
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "kill": "lsof -ti:8443 -ti:8080 | xargs -r kill -9",
+        "engine": "git clone --depth 1 https://github.com/ozkl/doomgeneric .gener/vendor/doomgeneric && make -C scripts/doom -j8",
+        "engine:build": "make -C scripts/doom -j8",
+        "cert": "node scripts/make-dev-cert.cjs",
+        "serve": "yarn build && node scripts/doom-device.cjs --host-only",
+        "host:check": "yarn build && node scripts/host-check.cjs",
+        "canary": "node scripts/canary.cjs",
+        "play": "yarn build && node scripts/doom-device.cjs --input remote --warm --hold --seconds 0 --warp 1 2 --push 64",
+        "play:32": "yarn build && node scripts/doom-device.cjs --input remote --warm --hold --seconds 0 --warp 1 2 --push 32",
+        "play:demo": "yarn build && node scripts/doom-device.cjs --warm --hold --seconds 30 --push 32,64",
+        "print-argv": "node scripts/doom-device.cjs --input remote --print-argv",
+        "hid:selftest": "yarn build && node scripts/hid-selftest.cjs",
+        "ui:install-check": "node scripts/chrome-install-check.cjs",
+        "doom:keys-check": "yarn build && node scripts/doom-keys-check.cjs",
+        "doom:warp-check": "node scripts/doom-warp-args-check.cjs",
+        "doom:input-check": "node scripts/doom-input-check.cjs",
+        "doom:tap-check": "node scripts/doom-tap-check.cjs",
+        "doom:stages": "node scripts/doom-stage-probe.cjs",
+        "doom:preview": "node scripts/doom-preview.cjs",
+        "doom:gif": "node scripts/doom-gif.cjs"
+    },
+    "dependencies": {
+        "@codepunkt/wasm-layout-text": "^3.0.0",
+        "pngjs": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^24.0.0",
+        "@types/pngjs": "^6.0.5",
+        "typescript": "^5.7.2"
+    }
+}

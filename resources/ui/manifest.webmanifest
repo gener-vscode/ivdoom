@@ -1,0 +1,19 @@
+{
+  "name": "Pixoo HID",
+  "short_name": "Pixoo HID",
+  "description": "Phone as a two-thumb gamepad for the Pixoo 64x64 LED display: left pad = direction, right pad = actions, the game's status strip as the background.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["games", "utilities"],
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

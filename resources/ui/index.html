@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pixoo HID</title>
+<meta name="description" content="Phone as a classic two-thumb gamepad for the Pixoo 64x64 display.">
+
+<!-- Web Clip / fullscreen contract: the viewport must NOT scale and must NOT move.
+     `user-scalable=no` + `maximum-scale=1` is what makes an iOS "Add to Main Screen" clip behave like
+     an app instead of a zoomable page; `viewport-fit=cover` keeps the safe areas ours to lay out. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pixoo HID">
+<meta name="application-name" content="Pixoo HID">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+
+<!-- "Add to the home screen" is TWO features wearing one name, and only one of them was working.
+     iOS Safari: a SHORTCUT built from the meta tags above — that is why iPhone installed, over plain HTTP.
+     Android Chrome: a WEB APP install. It needs a Web App Manifest and a secure context (https), so it
+     answered 無法安裝此應用程式. This link is half of that fix; `scripts/https-proxy.cjs` is the other half,
+     and `scripts/chrome-install-check.cjs` measures what Chrome itself reports (documented in AGENTS.md).
+     The manifest is relative on purpose: `start_url` stays inside this directory because the page AND the
+     input broker live on the same origin (`src/functions/ui.ts` + `src/ui/static.ts`). -->
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg">
+<link rel="mask-icon" href="./icon.svg" color="#2bde6b">
+
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.js"></script>
+<!-- Separate module on purpose: the strip has its own 1 s clock and its own failure mode (an image
+     endpoint), and it must keep working even if the controller half is changed. It shares only the URL rules. -->
+<script type="module" src="./hud.js"></script>
+</head>
+<body>
+<noscript><p class="fatal">This controller needs JavaScript: every gesture is a window/document listener.</p></noscript>
+
+<!-- STATUS STRIP layer (src/hud/, resources/ui/hud.js). The score/lives/level header is NOT on the panel
+     (HUD_HEIGHT = 0), so this is the only place a player can read them: the game renders one PNG per
+     second and this fixed layer paints it as a background image. `aria-hidden` because the same values are
+     written as readable text into #hudLine below - the image is the visual, the text is the guarantee. -->
+<div id="hudBand" aria-hidden="true"></div>
+
+<main id="app">
+  <header id="bar">
+    <span id="linkBadge" class="badge badge--bad">offline</span>
+    <span id="sessLabel" class="badge"></span>
+    <span id="syncBadge" class="badge badge--bad">sync?</span>
+    <span class="spacer"></span>
+    <span id="zoomWarn" class="badge badge--warn">pinch zoom</span>
+    <button id="panelBtn" class="btn noAction" type="button" aria-expanded="false" aria-controls="panel">info</button>
+    <button id="clearBtn" class="btn noAction" type="button">clear</button>
+  </header>
+
+  <section id="field">
+    <!-- LEFT thumb: direction. An origin-independent virtual stick: press anywhere, the offset from
+         where you touched IS the vector, so a thumb never has to find a knob first. -->
+    <div id="padLeft" class="pad pad--left" aria-label="Direction stick">
+      <div class="pad__frame"></div>
+      <div id="knob" class="knob" aria-hidden="true"></div>
+      <div id="stickRead" class="readout">idle</div>
+      <div class="pad__label">L · direction</div>
+    </div>
+
+    <!-- The narrow middle column is the HUD, deliberately NOT touchable so it never steals a gesture. -->
+    <div id="midCol">
+      <div id="slotLabel" class="mid__slot">slot 0</div>
+      <div id="lastCmd" class="mid__cmd" role="status" aria-live="polite">—</div>
+      <div id="ackBadge" class="mid__ack">no ack</div>
+                                                <div class="mid__hint">R: tap ↓ = main action<br>tap ↑ = other action<br>slide ↔ = switch</div>
+            <!-- The strip's numbers as TEXT, in the column that is deliberately not touchable: a dimmed or
+                       failed background image must never be the only copy of the score. -->
+            <div id="hudLine" class="mid__game" role="status" aria-live="off">game hud: waiting</div>
+    </div>
+
+    <!-- RIGHT thumb: the pad is SPLIT BY POSITION - a LOWER-half tap is the main action (`primary`), an
+                 UPPER-half tap the other one (`secondary`); a slide past the threshold stays a separate gesture
+                 (altUp/altDown) and a horizontal one is a switch. Two verbs, one thumb, no mode switch. -->
+    <div id="padRight" class="pad pad--right" aria-label="Action pad">
+      <div class="pad__frame"></div>
+      <div id="actionFlash" class="flash" aria-hidden="true"></div>
+      <div class="pad__split" aria-hidden="true"></div>
+            <div class="pad__label">R · ↓ main · ↑ other</div>
+    </div>
+  </section>
+
+  <div id="rotateGate"><p>turn the phone sideways — this is a two-thumb layout</p></div>
+
+  <section id="panel" hidden>
+    <div id="panelBody"></div>
+  </section>
+</main>
+</body>
+</html>
